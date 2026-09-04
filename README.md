@@ -20,7 +20,7 @@ Apple 的公开 `NSTouchBar` API 只允许当前前台 App 提供 Touch Bar 内�
 
 系统 Control Strip 接口未公开，因此应用不能上架 Mac App Store，未来的 macOS 版本也可能需要适配。Touch Bar 没有显示时，请确认“系统设置 → 键盘 → Touch Bar 设置 → Touch Bar 显示”选中“App 控制项”（可带 Control Strip）。
 
-## 数据源
+## 数据源与隐私
 
 项目已将旧版 `CodexUsageMonitor.m` 的真实额度读取逻辑迁移到 `CodexQuotaProvider`：
 
@@ -29,7 +29,9 @@ Apple 的公开 `NSTouchBar` API 只允许当前前台 App 提供 Touch Bar 内�
 3. 请求 Codex 官方 `https://chatgpt.com/backend-api/wham/usage` 接口。
 4. 按窗口长度识别 5 小时额度和 7 天额度，并转换为 `QuotaSnapshot`。
 
-凭据不会写入新文件，也不会发送到第三方服务。如果本机 `127.0.0.1:7897` 代理端口可用，请求会沿用旧版逻辑自动使用该代理。
+凭据不会写入新文件，也不会发送到第三方服务。OAuth token 只通过 `curl` 的标准输入传递，不会出现在命令行参数或日志中。请求默认直连；如果用户在 macOS“网络”设置中明确启用了 HTTPS 代理，应用会遵循该系统代理配置。
+
+Codex Pulse 不包含遥测、统计、广告或第三方 SDK，不上传使用历史，也不会修改 `~/.codex/auth.json`。应用只在本机保存显示和刷新偏好。
 
 `MockQuotaProvider` 仍保留，供无网络预览和测试使用。以后接口发生变化时，只需更新 Provider/Parser，UI 和刷新调度不需要修改。
 

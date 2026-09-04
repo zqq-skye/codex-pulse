@@ -22,6 +22,7 @@ swiftc \
     -Xfrontend "$overlay_path" \
     "${source_files[@]}" \
     -framework AppKit \
+    -framework CFNetwork \
     -framework ServiceManagement \
     -o "$binary_path"
 

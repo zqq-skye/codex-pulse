@@ -25,6 +25,7 @@ swiftc \
     "$project_dir/AppSources/CodexPulse/Services/QuotaProvider.swift" \
     "$project_dir/Tests/SmokeTests/main.swift" \
     -framework AppKit \
+    -framework CFNetwork \
     -o "$test_binary"
 
 "$test_binary"

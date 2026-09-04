@@ -1,3 +1,4 @@
+import CFNetwork
 import Foundation
 
 protocol QuotaProvider: Sendable {
@@ -62,8 +63,8 @@ struct CodexQuotaProvider: QuotaProvider {
       header = "ChatGPT-Account-ID: \(escapeForCurlConfig(accountID))"
 
       """
-    if localProxyIsAvailable() {
-      config = "proxy = \"http://127.0.0.1:7897\"\n" + config
+    if let proxyURL = configuredSystemHTTPSProxyURL() {
+      config = "proxy = \"\(escapeForCurlConfig(proxyURL))\"\n" + config
     }
 
     let process = Process()
@@ -95,20 +96,24 @@ struct CodexQuotaProvider: QuotaProvider {
     return try CodexUsageParser.parse(responseData)
   }
 
-  private func localProxyIsAvailable() -> Bool {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/nc")
-    process.arguments = ["-z", "-G", "1", "127.0.0.1", "7897"]
-    process.standardOutput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
-
-    do {
-      try process.run()
-      process.waitUntilExit()
-      return process.terminationStatus == 0
-    } catch {
-      return false
+  private func configuredSystemHTTPSProxyURL() -> String? {
+    guard
+      let proxySettings = CFNetworkCopySystemProxySettings()?.takeRetainedValue()
+        as? [String: Any],
+      (proxySettings[kCFNetworkProxiesHTTPSEnable as String] as? NSNumber)?.boolValue == true,
+      let host = proxySettings[kCFNetworkProxiesHTTPSProxy as String] as? String,
+      !host.isEmpty,
+      let port = (proxySettings[kCFNetworkProxiesHTTPSPort as String] as? NSNumber)?.intValue,
+      (1...65_535).contains(port)
+    else {
+      return nil
     }
+
+    var components = URLComponents()
+    components.scheme = "http"
+    components.host = host
+    components.port = port
+    return components.url?.absoluteString
   }
 
   private func escapeForCurlConfig(_ value: String) -> String {
